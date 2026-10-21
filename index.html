@@ -8,18 +8,110 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100dvh; display: grid; place-content: center;
+      margin: 0; min-height: 100dvh;
       font: 15px/1.4 system-ui, -apple-system, sans-serif;
-      background: #0e0f12; color: #e8e8ea; text-align: center; padding: 24px;
+      background: #0e0f12; color: #e8e8ea;
     }
-    h1 { font-size: 32px; margin: 0 0 6px; letter-spacing: -.02em; }
-    p { color: #8a8b93; margin: 0; font-size: 13px; }
+    .center { min-height: 100dvh; display: grid; place-content: center; gap: 12px; padding: 24px; }
+    .card { width: min(360px, 92vw); }
+    input, button {
+      font: inherit; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid #26272c; background: #17181c; color: inherit; width: 100%;
+    }
+    input:focus { outline: 2px solid #5b9dff; outline-offset: 1px; }
+    button { background: #e8e8ea; color: #0e0f12; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .5; }
+    .stack { display: grid; gap: 10px; }
+    .error { color: #ff6b6b; margin: 0; font-size: 13px; }
+    .muted { color: #8a8b93; font-size: 13px; }
+    h1 { font-size: 26px; margin: 0 0 8px; text-align: center; }
   </style>
 </head>
 <body>
-  <div>
-    <h1>Lyfe</h1>
-    <p>The pipe works. Steps to follow.</p>
+  <div class="center" id="app">
+    <div class="card stack">
+      <h1>Lyfe</h1>
+      <p class="muted" style="text-align: center; margin: 0;">Loading…</p>
+    </div>
   </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    // ---- PASTE YOUR TWO VALUES HERE ----
+    const SUPABASE_URL = 'PASTE_YOUR_PROJECT_URL_HERE'
+    const SUPABASE_ANON_KEY = 'PASTE_YOUR_ANON_KEY_HERE'
+    // ------------------------------------
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    })
+
+    const app = document.getElementById('app')
+
+    async function render() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) renderAuth()
+      else renderLoggedIn(session)
+    }
+
+    function renderAuth() {
+      app.innerHTML = `
+        <form class="card stack" id="auth-form">
+          <h1>Lyfe</h1>
+          <input type="email" id="email" placeholder="email"
+                 autocomplete="username" required />
+          <input type="password" id="password" placeholder="password"
+                 autocomplete="current-password" required />
+          <p class="error" id="err" style="display:none"></p>
+          <button type="submit" id="btn">Unlock</button>
+        </form>
+      `
+
+      const form = document.getElementById('auth-form')
+      const err  = document.getElementById('err')
+      const btn  = document.getElementById('btn')
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        err.style.display = 'none'
+        btn.disabled = true
+        btn.textContent = '…'
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email:    document.getElementById('email').value,
+          password: document.getElementById('password').value,
+        })
+
+        if (error) {
+          err.textContent = error.message
+          err.style.display = 'block'
+          btn.disabled = false
+          btn.textContent = 'Unlock'
+          return
+        }
+        await render()
+      })
+    }
+
+    function renderLoggedIn(session) {
+      app.innerHTML = `
+        <div class="card stack">
+          <h1>Lyfe</h1>
+          <p class="muted" style="text-align:center; margin:0">
+            Logged in as<br><strong>${session.user.email}</strong>
+          </p>
+          <button id="out">Sign out</button>
+        </div>
+      `
+      document.getElementById('out').addEventListener('click', async () => {
+        await supabase.auth.signOut()
+        await render()
+      })
+    }
+
+    supabase.auth.onAuthStateChange(() => render())
+    render()
+  </script>
 </body>
 </html>
