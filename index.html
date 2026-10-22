@@ -25,6 +25,15 @@
     .error { color: #ff6b6b; margin: 0; font-size: 13px; }
     .muted { color: #8a8b93; font-size: 13px; }
     h1 { font-size: 26px; margin: 0 0 8px; text-align: center; }
+    .pin {
+      text-align: center; letter-spacing: .5em;
+      font-size: 22px; padding: 16px;
+    }
+    .link {
+      background: none; border: none; color: #8a8b93;
+      font-size: 12px; padding: 6px; text-decoration: underline;
+      width: auto; margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -38,10 +47,10 @@
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-    // ---- PASTE YOUR TWO VALUES HERE ----
+    // ---- YOUR VALUES ----
     const SUPABASE_URL = 'https://tuemqyljwcyfpyouafwk.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_fPkhGANPKB1d7q-09d5Lsg_R18djxa_'
-    // ------------------------------------
+    // ---------------------
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true }
@@ -49,12 +58,70 @@
 
     const app = document.getElementById('app')
 
-    async function render() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) renderAuth()
-      else renderLoggedIn(session)
+    // ---------- PIN crypto ----------
+    const enc = new TextEncoder()
+    const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+    const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
+
+    async function derive(pin, salt) {
+      const key = await crypto.subtle.importKey(
+        'raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']
+      )
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+        key, 256
+      )
+      return toB64(bits)
     }
 
+    async function makePin(pin) {
+      const salt = crypto.getRandomValues(new Uint8Array(16))
+      return { hash: await derive(pin, salt), salt: toB64(salt) }
+    }
+
+    async function checkPin(pin, hash, salt) {
+      return (await derive(pin, fromB64(salt))) === hash
+    }
+
+    // ---------- state ----------
+    let session = null
+    let profile = null
+    let locked = true
+    let hiddenAt = null
+
+    // ---------- flow ----------
+    async function boot() {
+      const { data } = await supabase.auth.getSession()
+      session = data.session
+      await render()
+    }
+
+    async function render() {
+      if (!session) { profile = null; return renderAuth() }
+
+      if (!profile) {
+        const { data, error } = await supabase
+          .from('profiles').select('*').eq('id', session.user.id).single()
+        if (error) return renderFatal(error.message)
+        profile = data
+      }
+
+      if (!profile.pin_hash) return renderSetPin()
+      if (locked) return renderPin()
+      return renderHome()
+    }
+
+    function renderFatal(msg) {
+      app.innerHTML = `
+        <div class="card stack">
+          <h1>Lyfe</h1>
+          <p class="error">${msg}</p>
+          <button id="out">Sign out</button>
+        </div>`
+      document.getElementById('out').onclick = signOut
+    }
+
+    // ---------- screens ----------
     function renderAuth() {
       app.innerHTML = `
         <form class="card stack" id="auth-form">
@@ -65,8 +132,7 @@
                  autocomplete="current-password" required />
           <p class="error" id="err" style="display:none"></p>
           <button type="submit" id="btn">Unlock</button>
-        </form>
-      `
+        </form>`
 
       const form = document.getElementById('auth-form')
       const err  = document.getElementById('err')
@@ -79,7 +145,7 @@
         btn.textContent = '…'
 
         const { error } = await supabase.auth.signInWithPassword({
-          email:    document.getElementById('email').value,
+          email:    document.getElementById('email').value.trim(),
           password: document.getElementById('password').value,
         })
 
@@ -90,28 +156,137 @@
           btn.textContent = 'Unlock'
           return
         }
+        locked = false   // just proved identity with password
         await render()
       })
     }
 
-    function renderLoggedIn(session) {
+    function renderSetPin() {
+      app.innerHTML = `
+        <form class="card stack" id="set-form">
+          <h1>Set a PIN</h1>
+          <p class="muted" style="text-align:center;margin:0">
+            Six digits. Used to open Lyfe from now on.
+          </p>
+          <input class="pin" id="pin1" type="password" inputMode="numeric"
+                 maxLength="6" placeholder="••••••" autocomplete="new-password" />
+          <input class="pin" id="pin2" type="password" inputMode="numeric"
+                 maxLength="6" placeholder="again" autocomplete="new-password" />
+          <p class="error" id="err" style="display:none"></p>
+          <button type="submit">Save PIN</button>
+        </form>`
+
+      const digits = (el) => el.value.replace(/\D/g, '')
+      document.getElementById('pin1').addEventListener('input', (e) => e.target.value = digits(e.target))
+      document.getElementById('pin2').addEventListener('input', (e) => e.target.value = digits(e.target))
+
+      document.getElementById('set-form').addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const err = document.getElementById('err')
+        err.style.display = 'none'
+
+        const p1 = document.getElementById('pin1').value
+        const p2 = document.getElementById('pin2').value
+
+        if (p1.length !== 6) { err.textContent = 'PIN must be 6 digits'; err.style.display = 'block'; return }
+        if (p1 !== p2)       { err.textContent = 'PINs don’t match';      err.style.display = 'block'; return }
+
+        const { hash, salt } = await makePin(p1)
+        const { error } = await supabase.from('profiles')
+          .update({ pin_hash: hash, pin_salt: salt }).eq('id', profile.id)
+
+        if (error) { err.textContent = error.message; err.style.display = 'block'; return }
+
+        profile.pin_hash = hash
+        profile.pin_salt = salt
+        locked = false
+        await render()
+      })
+    }
+
+    function renderPin() {
+      app.innerHTML = `
+        <form class="card stack" id="pin-form">
+          <h1>Lyfe</h1>
+          <input class="pin" id="pin" type="password" inputMode="numeric"
+                 maxLength="6" placeholder="••••••" autocomplete="current-password" autofocus />
+          <p class="error" id="err" style="display:none"></p>
+          <button type="submit">Unlock</button>
+          <button type="button" class="link" id="out">forgot PIN — sign out</button>
+        </form>`
+
+      const input = document.getElementById('pin')
+      const err   = document.getElementById('err')
+      const form  = document.getElementById('pin-form')
+
+      input.addEventListener('input', (e) => e.target.value = e.target.value.replace(/\D/g, ''))
+      document.getElementById('out').onclick = signOut
+
+      // auto-submit at 6 digits
+      input.addEventListener('input', async () => {
+        if (input.value.length === 6) form.requestSubmit()
+      })
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        err.style.display = 'none'
+
+        const ok = await checkPin(input.value, profile.pin_hash, profile.pin_salt)
+        if (!ok) {
+          err.textContent = 'Wrong PIN'
+          err.style.display = 'block'
+          input.value = ''
+          return
+        }
+        locked = false
+        await render()
+      })
+    }
+
+    function renderHome() {
       app.innerHTML = `
         <div class="card stack">
           <h1>Lyfe</h1>
           <p class="muted" style="text-align:center; margin:0">
             Logged in as<br><strong>${session.user.email}</strong>
           </p>
+          <p class="muted" style="text-align:center; margin:0; font-size:12px">
+            PIN is active. Areas come next.
+          </p>
           <button id="out">Sign out</button>
-        </div>
-      `
-      document.getElementById('out').addEventListener('click', async () => {
-        await supabase.auth.signOut()
-        await render()
-      })
+        </div>`
+      document.getElementById('out').onclick = signOut
     }
 
-    supabase.auth.onAuthStateChange(() => render())
-    render()
+    // ---------- helpers ----------
+    async function signOut() {
+      await supabase.auth.signOut()
+      session = null
+      profile = null
+      locked = true
+      await render()
+    }
+
+    // ---------- lock on background ----------
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        hiddenAt = Date.now()
+      } else if (hiddenAt && Date.now() - hiddenAt > 60_000 && profile?.pin_hash) {
+        locked = true
+        render()
+      }
+    })
+
+    supabase.auth.onAuthStateChange((event, s) => {
+      session = s
+      if (event === 'SIGNED_OUT') {
+        profile = null
+        locked = true
+      }
+      render()
+    })
+
+    boot()
   </script>
 </body>
 </html>
