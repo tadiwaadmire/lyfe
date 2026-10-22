@@ -14,43 +14,101 @@
     }
     .center { min-height: 100dvh; display: grid; place-content: center; gap: 12px; padding: 24px; }
     .card { width: min(360px, 92vw); }
-    input, button {
+    input, button, select {
       font: inherit; padding: 12px 14px; border-radius: 10px;
       border: 1px solid #26272c; background: #17181c; color: inherit; width: 100%;
     }
-    input:focus { outline: 2px solid #5b9dff; outline-offset: 1px; }
+    input:focus, select:focus { outline: 2px solid #5b9dff; outline-offset: 1px; }
     button { background: #e8e8ea; color: #0e0f12; font-weight: 600; cursor: pointer; }
     button:disabled { opacity: .5; }
     .stack { display: grid; gap: 10px; }
     .error { color: #ff6b6b; margin: 0; font-size: 13px; }
     .muted { color: #8a8b93; font-size: 13px; }
     h1 { font-size: 26px; margin: 0 0 8px; text-align: center; }
-    .pin {
-      text-align: center; letter-spacing: .5em;
-      font-size: 22px; padding: 16px;
-    }
+    .pin { text-align: center; letter-spacing: .5em; font-size: 22px; padding: 16px; }
     .link {
       background: none; border: none; color: #8a8b93;
       font-size: 12px; padding: 6px; text-decoration: underline;
       width: auto; margin: 0 auto;
     }
+
+    .home { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+    .home-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .home-header h1 { font-size: 24px; margin: 0; text-align: left; }
+    .home-header .month { color: #8a8b93; font-size: 13px; }
+
+    .area {
+      border: 1px solid #1f2025; border-left: 3px solid var(--accent);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; background: #141519;
+    }
+    .area h2 {
+      font-size: 15px; margin: 0 0 12px;
+      color: var(--accent); letter-spacing: .02em;
+    }
+
+    .target + .target { margin-top: 14px; }
+    .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .title { font-size: 14px; }
+    .meta { font-size: 12px; color: #8a8b93; }
+    .bar { height: 4px; background: #23242a; border-radius: 99px; margin: 7px 0 5px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+    .badge.good { background: #17351f; color: #4ade80; }
+    .badge.bad  { background: #3a1b1b; color: #ff8080; }
+    .badge.idle { background: #24252b; color: #9a9ba3; }
+
+    .add-btn {
+      background: transparent; border: 1px dashed #2c2d33;
+      color: #8a8b93; font-size: 13px; padding: 8px;
+      margin-top: 12px; width: 100%;
+    }
+    .empty { color: #55565e; font-size: 13px; font-style: italic; margin: 0; }
+    .foot-signout {
+      background: none; border: none; color: #55565e;
+      font-size: 12px; text-decoration: underline;
+      margin-top: 24px; padding: 8px; width: 100%;
+    }
+
+    .form-wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 48px; }
+    .back {
+      background: none; border: none; color: #8a8b93;
+      font-size: 14px; text-align: left;
+      padding: 4px 0; width: auto; margin-bottom: 12px;
+    }
+    .form-wrap h1 { text-align: left; font-size: 22px; margin: 0 0 4px; }
+    .form-subtitle { font-size: 13px; margin: 0 0 20px; font-weight: 500; }
+
+    .field { display: grid; gap: 6px; margin-bottom: 16px; }
+    .field label { font-size: 12px; color: #8a8b93; text-transform: uppercase; letter-spacing: .05em; }
+    .field .hint { font-size: 11px; color: #55565e; }
+
+    .type-pills { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .type-pill {
+      background: #17181c; border: 1px solid #26272c;
+      color: #8a8b93; font-size: 13px; padding: 10px 6px;
+      text-align: center; border-radius: 10px;
+    }
+    .type-pill.active { background: #1e2938; border-color: #5b9dff; color: #5b9dff; }
+    .type-hint { font-size: 12px; color: #55565e; margin: 6px 0 0; }
+
+    .form-actions { display: grid; gap: 8px; margin-top: 8px; }
+    .save-btn { padding: 14px; }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="center" id="app">
-    <div class="card stack">
-      <h1>Lyfe</h1>
-      <p class="muted" style="text-align: center; margin: 0;">Loading…</p>
-    </div>
-  </div>
+  <div id="app"></div>
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-    // ---- YOUR VALUES ----
     const SUPABASE_URL = 'https://tuemqyljwcyfpyouafwk.supabase.co'
     const SUPABASE_ANON_KEY = 'sb_publishable_fPkhGANPKB1d7q-09d5Lsg_R18djxa_'
-    // ---------------------
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true }
@@ -58,38 +116,81 @@
 
     const app = document.getElementById('app')
 
-    // ---------- PIN crypto ----------
     const enc = new TextEncoder()
     const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
     const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 
     async function derive(pin, salt) {
-      const key = await crypto.subtle.importKey(
-        'raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']
-      )
+      const key = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits'])
       const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
-        key, 256
+        { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, key, 256
       )
       return toB64(bits)
     }
-
     async function makePin(pin) {
       const salt = crypto.getRandomValues(new Uint8Array(16))
       return { hash: await derive(pin, salt), salt: toB64(salt) }
     }
-
     async function checkPin(pin, hash, salt) {
       return (await derive(pin, fromB64(salt))) === hash
     }
 
-    // ---------- state ----------
+    function monthKey(d = new Date()) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+    }
+    function monthName(d = new Date()) {
+      return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    }
+    function daysInMonthOf(d) {
+      return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+    }
+    function daysElapsed(monthFirst, now) {
+      const first = new Date(monthFirst)
+      if (now < first) return 0
+      if (now.getFullYear() !== first.getFullYear() || now.getMonth() !== first.getMonth()) {
+        return daysInMonthOf(first)
+      }
+      return now.getDate()
+    }
+    function pace(target, progress = 0, now = new Date()) {
+      const monthFirst = new Date(target.month)
+      const total = daysInMonthOf(monthFirst)
+      const elapsed = daysElapsed(monthFirst, now)
+      if (target.type === 'milestone') {
+        return progress >= 1
+          ? { label: 'done', tone: 'good' }
+          : { label: elapsed >= total ? 'missed' : 'not started', tone: 'idle' }
+      }
+      if (target.rhythm) {
+        const weeks = Math.floor(elapsed / 7)
+        const expected = Number(target.rhythm) * weeks
+        const diff = progress - expected
+        if (diff < 0) return { label: `${Math.ceil(-diff)} behind`, tone: 'bad' }
+        if (diff >= Number(target.rhythm)) return { label: 'ahead', tone: 'good' }
+        return { label: 'on pace', tone: 'good' }
+      }
+      const expected = (elapsed / total) * Number(target.target_number)
+      const diff = progress - expected
+      if (diff >= Math.max(1, expected * 0.15)) return { label: 'ahead', tone: 'good' }
+      if (diff >= -0.5) return { label: 'on pace', tone: 'good' }
+      return { label: `${Math.ceil(-diff)} behind`, tone: 'bad' }
+    }
+    function progressLabel(target, progress = 0) {
+      if (target.type === 'milestone') return progress >= 1 ? 'done' : 'not started'
+      const p = Number(progress)
+      const n = Number(target.target_number)
+      return `${p % 1 === 0 ? p : p.toFixed(1)}/${n}${target.unit ? ' ' + target.unit : ''}`
+    }
+
     let session = null
     let profile = null
     let locked = true
     let hiddenAt = null
+    let view = 'home'
+    let addTargetAreaId = null
+    let homeData = { areas: [], targets: [], progress: {} }
+    let homeLoaded = false
 
-    // ---------- flow ----------
     async function boot() {
       const { data } = await supabase.auth.getSession()
       session = data.session
@@ -97,58 +198,52 @@
     }
 
     async function render() {
-      if (!session) { profile = null; return renderAuth() }
-
+      if (!session) { profile = null; homeLoaded = false; return renderAuth() }
       if (!profile) {
         const { data, error } = await supabase
           .from('profiles').select('*').eq('id', session.user.id).single()
         if (error) return renderFatal(error.message)
         profile = data
       }
-
       if (!profile.pin_hash) return renderSetPin()
       if (locked) return renderPin()
+      if (view === 'add-target') return renderAddTarget()
       return renderHome()
     }
 
     function renderFatal(msg) {
       app.innerHTML = `
-        <div class="card stack">
+        <div class="center"><div class="card stack">
           <h1>Lyfe</h1>
           <p class="error">${msg}</p>
           <button id="out">Sign out</button>
-        </div>`
+        </div></div>`
       document.getElementById('out').onclick = signOut
     }
 
-    // ---------- screens ----------
     function renderAuth() {
       app.innerHTML = `
-        <form class="card stack" id="auth-form">
-          <h1>Lyfe</h1>
-          <input type="email" id="email" placeholder="email"
-                 autocomplete="username" required />
-          <input type="password" id="password" placeholder="password"
-                 autocomplete="current-password" required />
-          <p class="error" id="err" style="display:none"></p>
-          <button type="submit" id="btn">Unlock</button>
-        </form>`
-
+        <div class="center">
+          <form class="card stack" id="auth-form">
+            <h1>Lyfe</h1>
+            <input type="email" id="email" placeholder="email" autocomplete="username" required />
+            <input type="password" id="password" placeholder="password" autocomplete="current-password" required />
+            <p class="error" id="err" style="display:none"></p>
+            <button type="submit" id="btn">Unlock</button>
+          </form>
+        </div>`
       const form = document.getElementById('auth-form')
       const err  = document.getElementById('err')
       const btn  = document.getElementById('btn')
-
       form.addEventListener('submit', async (e) => {
         e.preventDefault()
         err.style.display = 'none'
         btn.disabled = true
         btn.textContent = '…'
-
         const { error } = await supabase.auth.signInWithPassword({
           email:    document.getElementById('email').value.trim(),
           password: document.getElementById('password').value,
         })
-
         if (error) {
           err.textContent = error.message
           err.style.display = 'block'
@@ -156,47 +251,40 @@
           btn.textContent = 'Unlock'
           return
         }
-        locked = false   // just proved identity with password
+        locked = false
         await render()
       })
     }
 
     function renderSetPin() {
       app.innerHTML = `
-        <form class="card stack" id="set-form">
-          <h1>Set a PIN</h1>
-          <p class="muted" style="text-align:center;margin:0">
-            Six digits. Used to open Lyfe from now on.
-          </p>
-          <input class="pin" id="pin1" type="password" inputMode="numeric"
-                 maxLength="6" placeholder="••••••" autocomplete="new-password" />
-          <input class="pin" id="pin2" type="password" inputMode="numeric"
-                 maxLength="6" placeholder="again" autocomplete="new-password" />
-          <p class="error" id="err" style="display:none"></p>
-          <button type="submit">Save PIN</button>
-        </form>`
-
+        <div class="center">
+          <form class="card stack" id="set-form">
+            <h1>Set a PIN</h1>
+            <p class="muted" style="text-align:center;margin:0">
+              Six digits. Used to open Lyfe from now on.
+            </p>
+            <input class="pin" id="pin1" type="password" inputMode="numeric" maxLength="6" placeholder="••••••" autocomplete="new-password" />
+            <input class="pin" id="pin2" type="password" inputMode="numeric" maxLength="6" placeholder="again" autocomplete="new-password" />
+            <p class="error" id="err" style="display:none"></p>
+            <button type="submit">Save PIN</button>
+          </form>
+        </div>`
       const digits = (el) => el.value.replace(/\D/g, '')
       document.getElementById('pin1').addEventListener('input', (e) => e.target.value = digits(e.target))
       document.getElementById('pin2').addEventListener('input', (e) => e.target.value = digits(e.target))
-
       document.getElementById('set-form').addEventListener('submit', async (e) => {
         e.preventDefault()
         const err = document.getElementById('err')
         err.style.display = 'none'
-
         const p1 = document.getElementById('pin1').value
         const p2 = document.getElementById('pin2').value
-
         if (p1.length !== 6) { err.textContent = 'PIN must be 6 digits'; err.style.display = 'block'; return }
         if (p1 !== p2)       { err.textContent = 'PINs don’t match';      err.style.display = 'block'; return }
-
         const { hash, salt } = await makePin(p1)
         const { error } = await supabase.from('profiles')
           .update({ pin_hash: hash, pin_salt: salt }).eq('id', profile.id)
-
         if (error) { err.textContent = error.message; err.style.display = 'block'; return }
-
         profile.pin_hash = hash
         profile.pin_salt = salt
         locked = false
@@ -206,31 +294,26 @@
 
     function renderPin() {
       app.innerHTML = `
-        <form class="card stack" id="pin-form">
-          <h1>Lyfe</h1>
-          <input class="pin" id="pin" type="password" inputMode="numeric"
-                 maxLength="6" placeholder="••••••" autocomplete="current-password" autofocus />
-          <p class="error" id="err" style="display:none"></p>
-          <button type="submit">Unlock</button>
-          <button type="button" class="link" id="out">forgot PIN — sign out</button>
-        </form>`
-
+        <div class="center">
+          <form class="card stack" id="pin-form">
+            <h1>Lyfe</h1>
+            <input class="pin" id="pin" type="password" inputMode="numeric" maxLength="6" placeholder="••••••" autocomplete="current-password" autofocus />
+            <p class="error" id="err" style="display:none"></p>
+            <button type="submit">Unlock</button>
+            <button type="button" class="link" id="out">forgot PIN — sign out</button>
+          </form>
+        </div>`
       const input = document.getElementById('pin')
       const err   = document.getElementById('err')
       const form  = document.getElementById('pin-form')
-
       input.addEventListener('input', (e) => e.target.value = e.target.value.replace(/\D/g, ''))
       document.getElementById('out').onclick = signOut
-
-      // auto-submit at 6 digits
       input.addEventListener('input', async () => {
         if (input.value.length === 6) form.requestSubmit()
       })
-
       form.addEventListener('submit', async (e) => {
         e.preventDefault()
         err.style.display = 'none'
-
         const ok = await checkPin(input.value, profile.pin_hash, profile.pin_salt)
         if (!ok) {
           err.textContent = 'Wrong PIN'
@@ -243,36 +326,256 @@
       })
     }
 
-    function renderHome() {
+    async function loadHomeData() {
+      const month = monthKey()
+      const [areasRes, targetsRes, progressRes] = await Promise.all([
+        supabase.from('areas').select('*').order('sort'),
+        supabase.from('monthly_targets').select('*')
+          .eq('month', month).eq('status', 'active').order('created_at'),
+        supabase.from('target_progress').select('*'),
+      ])
+      homeData.areas = areasRes.data || []
+      homeData.targets = targetsRes.data || []
+      homeData.progress = Object.fromEntries(
+        (progressRes.data || []).map(r => [r.target_id, Number(r.progress)])
+      )
+      homeLoaded = true
+    }
+
+    async function renderHome() {
+      if (!homeLoaded) {
+        app.innerHTML = `<div class="center"><p class="muted">Loading…</p></div>`
+        await loadHomeData()
+      }
+      const areasHtml = homeData.areas.map(area => {
+        const targets = homeData.targets.filter(t => t.area_id === area.id)
+        const targetsHtml = targets.length === 0
+          ? `<p class="empty">No goals yet this month</p>`
+          : targets.map(t => {
+              const p = homeData.progress[t.id] || 0
+              const pc = pace(t, p)
+              const pct = Math.min(100, (p / Number(t.target_number)) * 100)
+              return `
+                <div class="target">
+                  <div class="row">
+                    <span class="title">${escapeHtml(t.title)}</span>
+                    <span class="badge ${pc.tone}">${pc.label}</span>
+                  </div>
+                  <div class="bar"><i style="width:${pct}%"></i></div>
+                  <span class="meta">${progressLabel(t, p)}</span>
+                </div>`
+            }).join('')
+        return `
+          <section class="area" style="--accent:${area.color}">
+            <h2>${escapeHtml(area.name)}</h2>
+            ${targetsHtml}
+            <button class="add-btn" data-area-id="${area.id}">+ Add goal</button>
+          </section>`
+      }).join('')
       app.innerHTML = `
-        <div class="card stack">
-          <h1>Lyfe</h1>
-          <p class="muted" style="text-align:center; margin:0">
-            Logged in as<br><strong>${session.user.email}</strong>
-          </p>
-          <p class="muted" style="text-align:center; margin:0; font-size:12px">
-            PIN is active. Areas come next.
-          </p>
-          <button id="out">Sign out</button>
+        <div class="home">
+          <div class="home-header">
+            <h1>Lyfe</h1>
+            <span class="month">${monthName()}</span>
+          </div>
+          ${areasHtml}
+          <button class="foot-signout" id="out">Sign out</button>
         </div>`
+      document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          addTargetAreaId = btn.dataset.areaId
+          view = 'add-target'
+          render()
+        })
+      })
       document.getElementById('out').onclick = signOut
     }
 
-    // ---------- helpers ----------
+    function renderAddTarget() {
+      const area = homeData.areas.find(a => a.id === addTargetAreaId)
+      if (!area) { view = 'home'; return render() }
+
+      app.innerHTML = `
+        <div class="form-wrap">
+          <button class="back" id="back">← Back</button>
+          <h1>New goal</h1>
+          <p class="form-subtitle" style="color:${area.color}">
+            ${escapeHtml(area.name)} · ${monthName()}
+          </p>
+          <form id="target-form">
+            <div class="field">
+              <label>What's the goal?</label>
+              <input type="text" id="t-title" placeholder="e.g. Land 5 website clients" required />
+            </div>
+            <div class="field">
+              <label>How do you track it?</label>
+              <div class="type-pills" id="type-pills">
+                <button type="button" class="type-pill active" data-type="counter">Number</button>
+                <button type="button" class="type-pill" data-type="milestone">One-off</button>
+                <button type="button" class="type-pill" data-type="practice">Practice</button>
+              </div>
+              <p class="type-hint" id="type-hint">Track progress with a number (5 clients, 20 sessions)</p>
+            </div>
+            <div class="field" id="number-field">
+              <label id="number-label">Target number</label>
+              <input type="number" id="t-number" min="1" value="1" />
+            </div>
+            <div class="field" id="unit-field">
+              <label>Unit (optional)</label>
+              <input type="text" id="t-unit" placeholder="e.g. clients, sessions" />
+            </div>
+            <div class="field" id="rhythm-field">
+              <label>Per week (optional)</label>
+              <input type="number" id="t-rhythm" min="1" placeholder="e.g. 5" />
+              <span class="hint">Leave blank for a simple monthly total</span>
+            </div>
+            <p class="error" id="err" style="display:none"></p>
+            <div class="form-actions">
+              <button type="submit" class="save-btn" id="save">Save goal</button>
+            </div>
+          </form>
+        </div>`
+
+      let type = 'counter'
+      const typeHint = document.getElementById('type-hint')
+      const numberField = document.getElementById('number-field')
+      const numberLabel = document.getElementById('number-label')
+      const numberInput = document.getElementById('t-number')
+      const unitField = document.getElementById('unit-field')
+      const rhythmField = document.getElementById('rhythm-field')
+
+      const hints = {
+        counter: 'Track progress with a number (5 clients, 20 sessions)',
+        milestone: 'One-time goal, done or not done (Launch app)',
+        practice: 'Measured in days this month (20 days of practice)'
+      }
+
+      function setType(newType) {
+        type = newType
+        document.querySelectorAll('.type-pill').forEach(p => {
+          p.classList.toggle('active', p.dataset.type === newType)
+        })
+        typeHint.textContent = hints[newType]
+        if (newType === 'milestone') {
+          numberField.classList.add('hidden')
+          unitField.classList.add('hidden')
+          rhythmField.classList.add('hidden')
+        } else if (newType === 'practice') {
+          numberField.classList.remove('hidden')
+          numberLabel.textContent = 'Days this month'
+          numberInput.value = 20
+          unitField.classList.add('hidden')
+          rhythmField.classList.add('hidden')
+        } else {
+          numberField.classList.remove('hidden')
+          numberLabel.textContent = 'Target number'
+          numberInput.value = 1
+          unitField.classList.remove('hidden')
+          rhythmField.classList.remove('hidden')
+        }
+      }
+
+      document.querySelectorAll('.type-pill').forEach(p => {
+        p.addEventListener('click', () => setType(p.dataset.type))
+      })
+
+      document.getElementById('back').onclick = () => {
+        view = 'home'
+        addTargetAreaId = null
+        render()
+      }
+
+      document.getElementById('target-form').addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const err = document.getElementById('err')
+        const saveBtn = document.getElementById('save')
+        err.style.display = 'none'
+        saveBtn.disabled = true
+        saveBtn.textContent = 'Saving…'
+
+        const title = document.getElementById('t-title').value.trim()
+        if (!title) {
+          err.textContent = 'Give it a title'
+          err.style.display = 'block'
+          saveBtn.disabled = false
+          saveBtn.textContent = 'Save goal'
+          return
+        }
+
+        const payload = {
+          area_id: area.id,
+          title,
+          type,
+          month: monthKey(),
+          target_number: 1,
+          unit: null,
+          rhythm: null,
+        }
+
+        if (type === 'counter' || type === 'practice') {
+          const num = parseInt(numberInput.value, 10)
+          if (!num || num < 1) {
+            err.textContent = 'Enter a number'
+            err.style.display = 'block'
+            saveBtn.disabled = false
+            saveBtn.textContent = 'Save goal'
+            return
+          }
+          payload.target_number = num
+        }
+
+        if (type === 'counter') {
+          const unit = document.getElementById('t-unit').value.trim()
+          if (unit) payload.unit = unit
+          const rhythm = document.getElementById('t-rhythm').value
+          if (rhythm) payload.rhythm = parseInt(rhythm, 10)
+        }
+
+        if (type === 'practice') {
+          payload.unit = 'days'
+        }
+
+        const { error } = await supabase.from('monthly_targets').insert(payload)
+
+        if (error) {
+          err.textContent = error.message
+          err.style.display = 'block'
+          saveBtn.disabled = false
+          saveBtn.textContent = 'Save goal'
+          return
+        }
+
+        homeLoaded = false
+        view = 'home'
+        addTargetAreaId = null
+        await render()
+      })
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]))
+    }
+
     async function signOut() {
       await supabase.auth.signOut()
       session = null
       profile = null
       locked = true
+      homeLoaded = false
+      view = 'home'
+      addTargetAreaId = null
       await render()
     }
 
-    // ---------- lock on background ----------
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         hiddenAt = Date.now()
       } else if (hiddenAt && Date.now() - hiddenAt > 60_000 && profile?.pin_hash) {
         locked = true
+        view = 'home'
+        addTargetAreaId = null
         render()
       }
     })
@@ -282,6 +585,7 @@
       if (event === 'SIGNED_OUT') {
         profile = null
         locked = true
+        homeLoaded = false
       }
       render()
     })
