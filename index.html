@@ -3,15 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0e0f12" />
+  <meta name="theme-color" content="#0a0b0d" />
   <title>Lyfe</title>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
     body {
-      margin: 0; min-height: 100dvh;
-      font: 15px/1.4 system-ui, -apple-system, sans-serif;
-      background: #0e0f12; color: #e8e8ea;
+      margin: 0;
+      font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #0a0b0d;
+      color: #e8e8ea;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ---------- shared ---------- */
     .center { min-height: 100dvh; display: grid; place-content: center; gap: 12px; padding: 24px; }
     .card { width: min(360px, 92vw); }
     input, button, select {
@@ -31,74 +36,188 @@
       font-size: 12px; padding: 6px; text-decoration: underline;
       width: auto; margin: 0 auto;
     }
+    .hidden { display: none !important; }
 
-    .home { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
-    .home-header {
+    /* ---------- home / dashboard ---------- */
+    .home {
+      max-width: 640px; margin: 0 auto;
+      padding: max(20px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
       display: flex; align-items: baseline; justify-content: space-between;
+      padding: 4px 2px 20px;
+    }
+    .topbar h1 {
+      font-size: 26px; font-weight: 700; letter-spacing: -.02em;
+      margin: 0; text-align: left;
+    }
+    .topbar .month {
+      font-size: 12px; color: #6d6e78; font-weight: 500;
+      letter-spacing: .03em; text-transform: uppercase;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       margin-bottom: 20px;
     }
-    .home-header h1 { font-size: 24px; margin: 0; text-align: left; }
-    .home-header .month { color: #8a8b93; font-size: 13px; }
+    .stat {
+      background: linear-gradient(180deg, #131419 0%, #0f1014 100%);
+      border: 1px solid #1b1c22;
+      border-radius: 14px;
+      padding: 14px 10px 12px;
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 24px; font-weight: 700;
+      letter-spacing: -.02em; line-height: 1; color: #e8e8ea;
+    }
+    .stat-num.good { color: #6ee7a5; }
+    .stat-num.bad  { color: #ff8f8f; }
+    .stat-label {
+      display: block; font-size: 11px; color: #6d6e78;
+      margin-top: 6px; letter-spacing: .04em; text-transform: uppercase;
+    }
+
+    /* ---------- area tiles ---------- */
+    .areas { display: grid; gap: 12px; }
 
     .area {
-      border: 1px solid #1f2025; border-left: 3px solid var(--accent);
-      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; background: #141519;
+      background: linear-gradient(180deg, #14151b 0%, #101116 100%);
+      border: 1px solid #1d1e25;
+      border-radius: 16px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
     }
-    .area h2 {
-      font-size: 15px; margin: 0 0 12px;
-      color: var(--accent); letter-spacing: .02em;
+    .area::before {
+      content: "";
+      position: absolute; top: 0; left: 0; bottom: 0; width: 2px;
+      background: var(--accent);
+      opacity: .8;
+    }
+    .area-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .area-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      flex-shrink: 0;
+    }
+    .area-header h2 {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      margin: 0; color: #c5c6cd;
     }
 
-    .target + .target { margin-top: 14px; }
-    .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-    .title { font-size: 14px; }
-    .meta { font-size: 12px; color: #8a8b93; }
-    .bar { height: 4px; background: #23242a; border-radius: 99px; margin: 7px 0 5px; overflow: hidden; }
-    .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+    .target + .target {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #1a1b21;
+    }
+    .target-title {
+      font-size: 15px; font-weight: 500; color: #e8e8ea;
+      margin-bottom: 10px; line-height: 1.35;
+    }
+    .target-bar {
+      height: 6px; background: #1e1f26; border-radius: 99px;
+      overflow: hidden; margin-bottom: 8px;
+    }
+    .target-bar i {
+      display: block; height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width .4s ease;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+    .target-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px;
+    }
+    .target-progress {
+      font-size: 12px; color: #8a8b93;
+      font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    }
 
-    .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
-    .badge.good { background: #17351f; color: #4ade80; }
-    .badge.bad  { background: #3a1b1b; color: #ff8080; }
-    .badge.idle { background: #24252b; color: #9a9ba3; }
+    .badge {
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 99px;
+      letter-spacing: .02em; white-space: nowrap;
+    }
+    .badge.good { background: rgba(110, 231, 165, .12); color: #6ee7a5; }
+    .badge.bad  { background: rgba(255, 143, 143, .12); color: #ff8f8f; }
+    .badge.idle { background: #23242b; color: #8a8b93; }
+
+    .empty {
+      color: #55565e; font-size: 13px;
+      font-style: italic; margin: 0; padding: 4px 0;
+    }
 
     .add-btn {
-      background: transparent; border: 1px dashed #2c2d33;
-      color: #8a8b93; font-size: 13px; padding: 8px;
-      margin-top: 12px; width: 100%;
+      margin-top: 16px;
+      background: rgba(255,255,255,0.03);
+      border: none;
+      color: #8a8b93;
+      font-size: 13px; font-weight: 500;
+      padding: 10px;
+      border-radius: 10px;
+      width: 100%;
+      letter-spacing: .02em;
     }
-    .empty { color: #55565e; font-size: 13px; font-style: italic; margin: 0; }
+    .add-btn:active { background: rgba(255,255,255,0.06); }
+
     .foot-signout {
-      background: none; border: none; color: #55565e;
-      font-size: 12px; text-decoration: underline;
-      margin-top: 24px; padding: 8px; width: 100%;
+      display: block; width: 100%;
+      background: none; border: none;
+      color: #55565e; font-size: 12px;
+      padding: 24px 8px 8px;
+      margin-top: 12px;
+      text-decoration: underline;
+      font-weight: 400;
     }
 
-    .form-wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 48px; }
+    /* ---------- add target form ---------- */
+    .form-wrap {
+      max-width: 480px; margin: 0 auto;
+      padding: max(20px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+    }
     .back {
       background: none; border: none; color: #8a8b93;
       font-size: 14px; text-align: left;
-      padding: 4px 0; width: auto; margin-bottom: 12px;
+      padding: 6px 0; width: auto; margin-bottom: 16px;
+      font-weight: 500;
     }
     .form-wrap h1 { text-align: left; font-size: 22px; margin: 0 0 4px; }
-    .form-subtitle { font-size: 13px; margin: 0 0 20px; font-weight: 500; }
+    .form-subtitle { font-size: 13px; margin: 0 0 22px; font-weight: 500; }
 
     .field { display: grid; gap: 6px; margin-bottom: 16px; }
-    .field label { font-size: 12px; color: #8a8b93; text-transform: uppercase; letter-spacing: .05em; }
+    .field label {
+      font-size: 11px; color: #8a8b93;
+      text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 600;
+    }
     .field .hint { font-size: 11px; color: #55565e; }
 
-    .type-pills { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .type-pills {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    }
     .type-pill {
       background: #17181c; border: 1px solid #26272c;
       color: #8a8b93; font-size: 13px; padding: 10px 6px;
       text-align: center; border-radius: 10px;
+      font-weight: 500;
     }
-    .type-pill.active { background: #1e2938; border-color: #5b9dff; color: #5b9dff; }
+    .type-pill.active {
+      background: #1e2938; border-color: #5b9dff; color: #5b9dff;
+    }
     .type-hint { font-size: 12px; color: #55565e; margin: 6px 0 0; }
 
     .form-actions { display: grid; gap: 8px; margin-top: 8px; }
     .save-btn { padding: 14px; }
-
-    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -179,7 +298,7 @@
       if (target.type === 'milestone') return progress >= 1 ? 'done' : 'not started'
       const p = Number(progress)
       const n = Number(target.target_number)
-      return `${p % 1 === 0 ? p : p.toFixed(1)}/${n}${target.unit ? ' ' + target.unit : ''}`
+      return `${p % 1 === 0 ? p : p.toFixed(1)} / ${n}${target.unit ? ' ' + target.unit : ''}`
     }
 
     let session = null
@@ -347,6 +466,16 @@
         app.innerHTML = `<div class="center"><p class="muted">Loading…</p></div>`
         await loadHomeData()
       }
+
+      // stat counts
+      let onTrack = 0, behind = 0
+      for (const t of homeData.targets) {
+        const p = homeData.progress[t.id] || 0
+        const pc = pace(t, p)
+        if (pc.tone === 'good') onTrack++
+        else if (pc.tone === 'bad') behind++
+      }
+
       const areasHtml = homeData.areas.map(area => {
         const targets = homeData.targets.filter(t => t.area_id === area.id)
         const targetsHtml = targets.length === 0
@@ -357,30 +486,52 @@
               const pct = Math.min(100, (p / Number(t.target_number)) * 100)
               return `
                 <div class="target">
-                  <div class="row">
-                    <span class="title">${escapeHtml(t.title)}</span>
+                  <div class="target-title">${escapeHtml(t.title)}</div>
+                  <div class="target-bar"><i style="width:${pct}%"></i></div>
+                  <div class="target-meta">
+                    <span class="target-progress">${progressLabel(t, p)}</span>
                     <span class="badge ${pc.tone}">${pc.label}</span>
                   </div>
-                  <div class="bar"><i style="width:${pct}%"></i></div>
-                  <span class="meta">${progressLabel(t, p)}</span>
                 </div>`
             }).join('')
         return `
           <section class="area" style="--accent:${area.color}">
-            <h2>${escapeHtml(area.name)}</h2>
+            <header class="area-header">
+              <span class="area-dot"></span>
+              <h2>${escapeHtml(area.name)}</h2>
+            </header>
             ${targetsHtml}
             <button class="add-btn" data-area-id="${area.id}">+ Add goal</button>
           </section>`
       }).join('')
+
       app.innerHTML = `
         <div class="home">
-          <div class="home-header">
+          <header class="topbar">
             <h1>Lyfe</h1>
             <span class="month">${monthName()}</span>
+          </header>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-num">${homeData.targets.length}</span>
+              <span class="stat-label">Goals</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num good">${onTrack}</span>
+              <span class="stat-label">On track</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num ${behind > 0 ? 'bad' : ''}">${behind}</span>
+              <span class="stat-label">Behind</span>
+            </div>
           </div>
-          ${areasHtml}
+
+          <div class="areas">${areasHtml}</div>
+
           <button class="foot-signout" id="out">Sign out</button>
         </div>`
+
       document.querySelectorAll('.add-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           addTargetAreaId = btn.dataset.areaId
